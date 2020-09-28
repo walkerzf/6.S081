@@ -21,6 +21,17 @@ static void freeproc(struct proc *p);
 
 extern char trampoline[]; // trampoline.S
 
+//compute the number of process
+int computenpro(void){
+	int res = 0;
+	for(int i = 0;i<NPROC;i++){
+	if(proc[i].state!=UNUSED){
+		res++;
+	}
+	}
+	return res;
+}
+
 // initialize the proc table at boot time.
 void
 procinit(void)
@@ -274,6 +285,8 @@ fork(void)
     return -1;
   }
   np->sz = p->sz;
+
+  np->argu = p->argu;
 
   np->parent = p;
 
