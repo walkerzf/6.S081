@@ -15,6 +15,8 @@ extern char etext[]; // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
 
+
+
 /*
  * create a direct-map page table for the kernel.
  */
@@ -120,6 +122,13 @@ void kvmmap(uint64 va, uint64 pa, uint64 sz, int perm)
 {
   if (mappages(kernel_pagetable, va, sz, pa, perm) != 0)
     panic("kvmmap");
+}
+
+//map the process kernel pgtbl as the existing kernel page table
+void ukvmmap(pagetable_t ukernelpgtbl, uint64 va, uint64 pa, uint64 sz, int perm)
+{
+  if (mappages(ukernelpgtbl, va, sz, pa, perm) != 0)
+    panic("ukvmmap");
 }
 
 // translate a kernel virtual address to
@@ -255,6 +264,28 @@ uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz)
   return newsz;
 }
 
+//add mappings for user addresses to process 's kernel pgtbl
+void u2kvmcopy(pagetable_t pgtbl, pagetable_t kpgtbl, uint64 oldsz, uint64 newsz)
+{
+  pte_t *ptes;
+  pte_t *pted;
+  uint64 a, pa;
+  uint flags;
+  if (newsz < oldsz)
+    return;
+  oldsz = PGROUNDUP(oldsz);
+  for (a = oldsz; a < newsz; a += PGSIZE)
+  {
+    if ((ptes = walk(pgtbl, a, 0)) == 0)
+      panic("pte do not exist");
+    if((pted = walk(kpgtbl,a,1))==0)
+      panic("not enough space");
+    pa =PTE2PA(*ptes);
+    flags = (PTE_FLAGS(*ptes) & (~PTE_U));
+    *pted = PA2PTE(pa) | flags;
+  }
+}
+
 // Deallocate user pages to bring the process size from oldsz to
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
 // need to be less than oldsz.  oldsz can be larger than the actual
@@ -298,12 +329,13 @@ void freewalk(pagetable_t pagetable)
 }
 //heplerfunction for vmprint
 void helpervmprint(pagetable_t pagetable, int level)
-{ 
-  if(level>2) return ;
+{
+  if (level > 2)
+    return;
   for (int i = 0; i < 512; i++)
   {
     pte_t pte = pagetable[i];
-    if ((pte & PTE_V) )
+    if ((pte & PTE_V))
     {
       //this pte pointer to a lower-level page table
       uint64 child = PTE2PA(pte);
@@ -313,8 +345,8 @@ void helpervmprint(pagetable_t pagetable, int level)
         if (j != level)
           printf(" ");
       }
-      printf("%d: pte %p pa %p\n",i,pte,child);
-      helpervmprint((pagetable_t)child,level+1);
+      printf("%d: pte %p pa %p\n", i, pte, child);
+      helpervmprint((pagetable_t)child, level + 1);
     }
   }
 }
@@ -413,24 +445,7 @@ int copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 // Return 0 on success, -1 on error.
 int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
 {
-  uint64 n, va0, pa0;
-
-  while (len > 0)
-  {
-    va0 = PGROUNDDOWN(srcva);
-    pa0 = walkaddr(pagetable, va0);
-    if (pa0 == 0)
-      return -1;
-    n = PGSIZE - (srcva - va0);
-    if (n > len)
-      n = len;
-    memmove(dst, (void *)(pa0 + (srcva - va0)), n);
-
-    len -= n;
-    dst += n;
-    srcva = va0 + PGSIZE;
-  }
-  return 0;
+  return copyin_new(pagetable, dst, srcva, len);
 }
 
 // Copy a null-terminated string from user to kernel.
@@ -439,46 +454,5 @@ int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
 // Return 0 on success, -1 on error.
 int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 {
-  uint64 n, va0, pa0;
-  int got_null = 0;
-
-  while (got_null == 0 && max > 0)
-  {
-    va0 = PGROUNDDOWN(srcva);
-    pa0 = walkaddr(pagetable, va0);
-    if (pa0 == 0)
-      return -1;
-    n = PGSIZE - (srcva - va0);
-    if (n > max)
-      n = max;
-
-    char *p = (char *)(pa0 + (srcva - va0));
-    while (n > 0)
-    {
-      if (*p == '\0')
-      {
-        *dst = '\0';
-        got_null = 1;
-        break;
-      }
-      else
-      {
-        *dst = *p;
-      }
-      --n;
-      --max;
-      p++;
-      dst++;
-    }
-
-    srcva = va0 + PGSIZE;
-  }
-  if (got_null)
-  {
-    return 0;
-  }
-  else
-  {
-    return -1;
-  }
+  return copyinstr_new(pagetable, dst, srcva, max);
 }

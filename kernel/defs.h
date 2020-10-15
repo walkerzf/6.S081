@@ -86,6 +86,9 @@ void            panic(char*) __attribute__((noreturn));
 void            printfinit(void);
 
 // proc.c
+
+pagetable_t     proc_kernelpgtbl(struct proc * );
+void            proc_freekernelpgtbl(pagetable_t pgtbl);
 int             cpuid(void);
 void            exit(int);
 int             fork(void);
@@ -158,6 +161,9 @@ void            uartputc_sync(int);
 int             uartgetc(void);
 
 // vm.c
+pte_t *         walk(pagetable_t, uint64 , int );
+void            u2kvmcopy(pagetable_t ,pagetable_t ,uint64  ,uint64 );
+void            ukvmmap(pagetable_t ukernelpgtbl, uint64 va, uint64 pa, uint64 sz, int perm);
 void            vmprint(pagetable_t);
 void            kvminit(void);
 void            kvminithart(void);
@@ -180,6 +186,11 @@ int             copyout(pagetable_t, uint64, char *, uint64);
 int             copyin(pagetable_t, char *, uint64, uint64);
 int             copyinstr(pagetable_t, char *, uint64, uint64);
 
+
+
+//vmcopyin.c
+int             copyin_new(pagetable_t , char *, uint64 , uint64 );
+int             copyinstr_new(pagetable_t , char *, uint64 , uint64 );
 
 // plic.c
 void            plicinit(void);
