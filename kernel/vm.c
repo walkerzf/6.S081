@@ -5,6 +5,8 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+#include "spinlock.h"
+#include "proc.h"
 
 /*
  * the kernel's page table.
@@ -14,8 +16,6 @@ pagetable_t kernel_pagetable;
 extern char etext[]; // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
-
-
 
 /*
  * create a direct-map page table for the kernel.
@@ -141,8 +141,8 @@ kvmpa(uint64 va)
   uint64 off = va % PGSIZE;
   pte_t *pte;
   uint64 pa;
-
-  pte = walk(kernel_pagetable, va, 0);
+  struct proc * p = myproc();
+  pte = walk(  p->kernelpgtbl, va, 0);
   if (pte == 0)
     panic("kvmpa");
   if ((*pte & PTE_V) == 0)
@@ -278,9 +278,9 @@ void u2kvmcopy(pagetable_t pgtbl, pagetable_t kpgtbl, uint64 oldsz, uint64 newsz
   {
     if ((ptes = walk(pgtbl, a, 0)) == 0)
       panic("pte do not exist");
-    if((pted = walk(kpgtbl,a,1))==0)
+    if ((pted = walk(kpgtbl, a, 1)) == 0)
       panic("not enough space");
-    pa =PTE2PA(*ptes);
+    pa = PTE2PA(*ptes);
     flags = (PTE_FLAGS(*ptes) & (~PTE_U));
     *pted = PA2PTE(pa) | flags;
   }

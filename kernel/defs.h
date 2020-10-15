@@ -163,7 +163,8 @@ int             uartgetc(void);
 // vm.c
 pte_t *         walk(pagetable_t, uint64 , int );
 void            u2kvmcopy(pagetable_t ,pagetable_t ,uint64  ,uint64 );
-void            ukvmmap(pagetable_t ukernelpgtbl, uint64 va, uint64 pa, uint64 sz, int perm);
+void            ukvmmap(pagetable_t , uint64 , uint64 , uint64 , int );
+void            ukvmunmap(pagetable_t , uint64 , uint64 );
 void            vmprint(pagetable_t);
 void            kvminit(void);
 void            kvminithart(void);

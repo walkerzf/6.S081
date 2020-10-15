@@ -173,13 +173,15 @@ freeproc(struct proc *p)
     if (pte != 0)
     {
       kfree((void *)PTE2PA(*pte));
+    }else{
+      panic("freeproc:walk");
     }
   }
-  if (p->kernelpgtbl)
-    proc_freekernelpgtbl(p->kernelpgtbl);
+ 
   if (p->pagetable)
     proc_freepagetable(p->pagetable, p->sz);
-
+   if (p->kernelpgtbl)
+    proc_freekernelpgtbl(p->kernelpgtbl);
   p->pagetable = 0;
   p->kernelpgtbl = 0;
   p->sz = 0;
@@ -231,28 +233,30 @@ proc_pagetable(struct proc *p)
 pagetable_t
 proc_kernelpgtbl(struct proc *p)
 {
-  pagetable_t kernel_pgtbl;
+  pagetable_t kptbl;
   //an empty pgtbl
-  kernel_pgtbl = uvmcreate();
-  if (kernel_pgtbl == 0)
+  kptbl = uvmcreate();
+  if (kptbl == 0)
     return 0;
   // map as the kernel page table
-  ukvmmap(kernel_pgtbl, UART0, UART0, PGSIZE, PTE_R | PTE_W);
+  ukvmmap(kptbl, UART0, UART0, PGSIZE, PTE_R | PTE_W);
   // virtio mmio disk interface
-  ukvmmap(kernel_pgtbl, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
+  ukvmmap(kptbl, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
   // CLINT
-  ukvmmap(kernel_pgtbl, CLINT, CLINT, 0x10000, PTE_R | PTE_W);
+ // ukvmmap(kernel_pgtbl, CLINT, CLINT, 0x10000, PTE_R | PTE_W);
   // PLIC
-  ukvmmap(kernel_pgtbl, PLIC, PLIC, 0x400000, PTE_R | PTE_W);
+  ukvmmap(kptbl, PLIC, PLIC, 0x400000, PTE_R | PTE_W);
   // map kernel text executable and read-only.
-  ukvmmap(kernel_pgtbl, KERNBASE, KERNBASE, (uint64)etext - KERNBASE, PTE_R | PTE_X);
+  ukvmmap(kptbl, KERNBASE, KERNBASE, (uint64)etext - KERNBASE, PTE_R | PTE_X);
   // map kernel data and the physical RAM we'll make use of.
-  ukvmmap(kernel_pgtbl, (uint64)etext, (uint64)etext, PHYSTOP - (uint64)etext, PTE_R | PTE_W);
+  ukvmmap(kptbl, (uint64)etext, (uint64)etext, PHYSTOP - (uint64)etext, PTE_R | PTE_W);
   // map the trampoline for trap entry/exit to
   // the highest virtual address in the kernel.
-  ukvmmap(kernel_pgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+  ukvmmap(kptbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
 
-  return kernel_pgtbl;
+  ukvmmap(kptbl, TRAPFRAME, (uint64)(p->trapframe), PGSIZE, PTE_R | PTE_W);
+
+  return kptbl;
 }
 
 // Free a process's page table, and free the
@@ -270,14 +274,17 @@ void proc_freekernelpgtbl(pagetable_t pgtbl)
   for (int i = 0; i < 512; i++)
   {
     pte_t pte = pgtbl[i];
-    if ((pte & PTE_V && (pte & (PTE_R | PTE_W | PTE_X))))
+    if (pte & PTE_V ){
+      pgtbl[i] =0; 
+      if((pte & (PTE_R | PTE_W | PTE_X))==0)
     {
       uint64 nxt = PTE2PA(pte);
       proc_freekernelpgtbl((pagetable_t)nxt);
-      pgtbl[i] = 0;
+
     }
   }
-  kfree((void *)pgtbl);
+}
+ kfree((void *)pgtbl);
 }
 
 // a user program that calls exec("/init")
@@ -332,12 +339,12 @@ int growproc(int n)
     {
       return -1;
     }
-    u2kvmcopy(p->pagetable, p->kernelpgtbl, sz, sz + n);
+    u2kvmcopy(p->pagetable, p->kernelpgtbl, sz-n, sz );
   }
   else if (n < 0)
   {
     sz = uvmdealloc(p->pagetable, sz, sz + n);
-    u2kvmcopy(p->pagetable, p->kernelpgtbl, sz - n, sz);
+    u2kvmcopy(p->pagetable, p->kernelpgtbl, sz , sz-n);
   }
   p->sz = sz;
   return 0;
@@ -366,7 +373,7 @@ int fork(void)
   }
   np->sz = p->sz;
 
-  u2kvmcopy(p->pagetable,np->kernelpgtbl,0,np->sz);
+  u2kvmcopy(np->pagetable,np->kernelpgtbl,0,np->sz);
 
   np->parent = p;
 
