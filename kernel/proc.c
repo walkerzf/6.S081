@@ -238,12 +238,13 @@ proc_kernelpgtbl(struct proc *p)
   kptbl = uvmcreate();
   if (kptbl == 0)
     return 0;
+ 
   // map as the kernel page table
   ukvmmap(kptbl, UART0, UART0, PGSIZE, PTE_R | PTE_W);
   // virtio mmio disk interface
   ukvmmap(kptbl, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
   // CLINT
- // ukvmmap(kernel_pgtbl, CLINT, CLINT, 0x10000, PTE_R | PTE_W);
+  ukvmmap(kptbl, CLINT, CLINT, 0x10000, PTE_R | PTE_W);
   // PLIC
   ukvmmap(kptbl, PLIC, PLIC, 0x400000, PTE_R | PTE_W);
   // map kernel text executable and read-only.
@@ -254,7 +255,7 @@ proc_kernelpgtbl(struct proc *p)
   // the highest virtual address in the kernel.
   ukvmmap(kptbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
 
-  ukvmmap(kptbl, TRAPFRAME, (uint64)(p->trapframe), PGSIZE, PTE_R | PTE_W);
+//  ukvmmap(kptbl, TRAPFRAME, (uint64)(p->trapframe), PGSIZE, PTE_R | PTE_W);
 
   return kptbl;
 }
@@ -280,7 +281,6 @@ void proc_freekernelpgtbl(pagetable_t pgtbl)
     {
       uint64 nxt = PTE2PA(pte);
       proc_freekernelpgtbl((pagetable_t)nxt);
-
     }
   }
 }

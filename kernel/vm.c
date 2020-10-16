@@ -142,7 +142,8 @@ kvmpa(uint64 va)
   pte_t *pte;
   uint64 pa;
   struct proc * p = myproc();
-  pte = walk(  p->kernelpgtbl, va, 0);
+  if(p==0) pte = walk(kernel_pagetable,va,0);
+  else  pte = walk(  p->kernelpgtbl, va, 0);
   if (pte == 0)
     panic("kvmpa");
   if ((*pte & PTE_V) == 0)
