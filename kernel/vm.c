@@ -141,9 +141,11 @@ kvmpa(uint64 va)
   uint64 off = va % PGSIZE;
   pte_t *pte;
   uint64 pa;
-  struct proc * p = myproc();
-  if(p==0) pte = walk(kernel_pagetable,va,0);
-  else  pte = walk(  p->kernelpgtbl, va, 0);
+  struct proc *p = myproc();
+  if (p == 0)
+    pte = walk(kernel_pagetable, va, 0);
+  else
+    pte = walk(p->kernelpgtbl, va, 0);
   if (pte == 0)
     panic("kvmpa");
   if ((*pte & PTE_V) == 0)
@@ -219,6 +221,58 @@ uvmcreate()
   return pagetable;
 }
 
+// // helper function
+// void kvmmapkern(pagetable_t pagetable, uint64 va, uint64 pa, uint64 sz, int perm)
+// {
+//   if (mappages(pagetable, va, sz, pa, perm) != 0)
+//     panic("kvmmap");
+// }
+
+// // according to the Q&A Lecture 7
+// pagetable_t kvmcreate()
+// {
+//   pagetable_t p = uvmcreate();
+//   int i;
+//   // we share the 1-511 entry
+//   for (i = 1; i < 512; i++)
+//   {
+//     p[i] = kernel_pagetable[i];
+//   }
+//   //we map the entry 0 and indentical to the kernel page table, add explicitly
+//   //we need a helper function because in kvminit function we do not
+//   //have an argument pagetable
+
+//   kvmmapkern(p, UART0, UART0, PGSIZE, PTE_R | PTE_W);
+//   kvmmapkern(p, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
+//   kvmmapkern(p, CLINT, CLINT, 0x10000, PTE_R | PTE_W);
+//   kvmmapkern(p, PLIC, PLIC, 0x400000, PTE_R | PTE_W);
+//   return p;
+// }
+
+// //according to the Q&A Lecture 7
+// //a specialize kvmfree to match kvmcreate
+// //because we share the 1-511 ,only entry to consider is entry 0
+// //thus ,we only have one mid-level pagetable and possibly 512 bottom-level
+// //we never have free the PA which is pointed by the bottom-level pte
+// //because non were allocated by kvmcreate
+// void kvmfree(pagetable_t pagetable, uint64 sz)
+// {
+//   pte_t pte = pagetable[0];
+//   pagetable_t level1 = (pagetable_t)PTE2PA(pte);
+//   for (int i = 0; i < 512; i++)
+//   {
+//     pte_t p = level1[i];
+//     if (p & PTE_V)
+//     {
+//       uint64 level2 = PTE2PA(p);
+//       kfree((void *) level2);
+//       level1[i] =0;
+//     }
+//   }
+//   kfree((void *)level1);
+//   kfree((void *)pagetable);
+// }
+
 // Load the user initcode into address 0 of pagetable,
 // for the very first process.
 // sz must be less than a page.
@@ -286,6 +340,43 @@ void u2kvmcopy(pagetable_t pgtbl, pagetable_t kpgtbl, uint64 oldsz, uint64 newsz
     *pted = PA2PTE(pa) | flags;
   }
 }
+
+// //according to Q&A lecture 7
+// //copy ptes from the user pgtbl to process kernel pgtbl
+// void kvmmapuser(int pid, pagetable_t kpagetable, pagetable_t upagetable, uint64 newsz, uint64 oldsz)
+// {
+//   uint64 va;
+//   pte_t *upte;
+//   pte_t *kpte;
+//   if (newsz > PLIC)
+//     panic("kvmmapuser:newsz too large");
+//   for (va = oldsz; va < newsz; va += PGSIZE)
+//   {
+//     upte = walk(upagetable, va, 0);
+//     //debug
+//     if (upte == 0)
+//     {
+//       printf("kvmmapuser :0x%x 0x%x\n", va, newsz);
+//       panic("kvmmapuser:not upte");
+//     }
+//     if ((*upte & PTE_V) == 0)
+//     {
+//       printf("kvmmapuser : no valid pte 0x%x 0x%x\n", va, newsz);
+//       panic("kvmmapuser:not valid upte");
+//     }
+//     kpte = walk(kpagetable, va, 1);
+//     if (kpte == 0)
+//       panic("kvmmapuser:no kpte");
+//     *kpte = *upte;
+//     *kpte &= ~(PTE_U | PTE_W | PTE_X);
+//   }
+//   // if newsz < oldsz clear ptes , not necessary
+//   //check p->sz will not use thess ptes
+//   for (va = newsz; va < oldsz; va += PGSIZE){
+//     kpte = walk(kpagetable, va, 1);
+//     *kpte &= ~PTE_V;
+//   }
+// }
 
 // Deallocate user pages to bring the process size from oldsz to
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
@@ -390,7 +481,8 @@ int uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     flags = PTE_FLAGS(*pte);
     if ((mem = kalloc()) == 0)
       goto err;
-    memmove(mem, (char *)pa, PGSIZE);
+    map
+        memmove(mem, (char *)pa, PGSIZE);
     if (mappages(new, i, PGSIZE, (uint64)mem, flags) != 0)
     {
       kfree(mem);
