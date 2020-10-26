@@ -1,0 +1,9 @@
+a0 first argument
+a1 the second argument
+a2 (contain 13) is the third argument
+
+0000000000000a38 <printf>:
+
+HE110 World  // little endian 
+
+because the register a1 or a2 would be some garabage!
