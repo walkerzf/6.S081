@@ -1,5 +1,6 @@
 // Saved registers for kernel context switches.
-struct context {
+struct context
+{
   uint64 ra;
   uint64 sp;
 
@@ -19,11 +20,12 @@ struct context {
 };
 
 // Per-CPU state.
-struct cpu {
-  struct proc *proc;          // The process running on this cpu, or null.
-  struct context context;     // swtch() here to enter scheduler().
-  int noff;                   // Depth of push_off() nesting.
-  int intena;                 // Were interrupts enabled before push_off()?
+struct cpu
+{
+  struct proc *proc;      // The process running on this cpu, or null.
+  struct context context; // swtch() here to enter scheduler().
+  int noff;               // Depth of push_off() nesting.
+  int intena;             // Were interrupts enabled before push_off()?
 };
 
 extern struct cpu cpus[NCPU];
@@ -41,7 +43,8 @@ extern struct cpu cpus[NCPU];
 // the trapframe includes callee-saved user registers like s0-s11 because the
 // return-to-user path via usertrapret() doesn't return through
 // the entire kernel call stack.
-struct trapframe {
+struct trapframe
+{
   /*   0 */ uint64 kernel_satp;   // kernel page table
   /*   8 */ uint64 kernel_sp;     // top of process's kernel stack
   /*  16 */ uint64 kernel_trap;   // usertrap()
@@ -80,19 +83,27 @@ struct trapframe {
   /* 280 */ uint64 t6;
 };
 
-enum procstate { UNUSED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+enum procstate
+{
+  UNUSED,
+  SLEEPING,
+  RUNNABLE,
+  RUNNING,
+  ZOMBIE
+};
 
 // Per-process state
-struct proc {
+struct proc
+{
   struct spinlock lock;
 
   // p->lock must be held when using these:
-  enum procstate state;        // Process state
-  struct proc *parent;         // Parent process
-  void *chan;                  // If non-zero, sleeping on chan
-  int killed;                  // If non-zero, have been killed
-  int xstate;                  // Exit status to be returned to parent's wait
-  int pid;                     // Process ID
+  enum procstate state; // Process state
+  struct proc *parent;  // Parent process
+  void *chan;           // If non-zero, sleeping on chan
+  int killed;           // If non-zero, have been killed
+  int xstate;           // Exit status to be returned to parent's wait
+  int pid;              // Process ID
 
   // these are private to the process, so p->lock need not be held.
   uint64 kstack;               // Virtual address of kernel stack
@@ -104,7 +115,43 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
 
-  int interval;                // the first argument interval
-  uint64  fp;                  // the second argument function pointer 
-  int pastedticks;             //track of past ticked
+  int interval;    // the first argument interval
+  uint64 handler;  // the second argument function pointer
+  int pastedticks; //track of past ticked
+
+  int permisson;
+
+  //saved register
+  uint64 epc;
+  uint64 ra;
+  uint64 sp;
+  uint64 gp;
+  uint64 tp;
+  uint64 t0;
+  uint64 t1;
+  uint64 t2;
+  uint64 s0;
+  uint64 s1;
+  uint64 a0;
+  uint64 a1;
+  uint64 a2;
+  uint64 a3;
+  uint64 a4;
+  uint64 a5;
+  uint64 a6;
+  uint64 a7;
+  uint64 s2;
+  uint64 s3;
+  uint64 s4;
+  uint64 s5;
+  uint64 s6;
+  uint64 s7;
+  uint64 s8;
+  uint64 s9;
+  uint64 s10;
+  uint64 s11;
+  uint64 t3;
+  uint64 t4;
+  uint64 t5;
+  uint64 t6;
 };
