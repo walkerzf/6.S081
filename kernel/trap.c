@@ -71,7 +71,7 @@ void usertrap(void)
   else if (r_scause() == 15 || r_scause() == 13)
   {
     uint64 va = r_stval();
-    if (va > p->sz)
+    if (va >= p->sz)
     {
       p->killed = 1;
     }

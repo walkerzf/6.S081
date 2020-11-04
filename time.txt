@@ -1,4 +1,4 @@
- i spent six hours on this lab .
+ i spent 6 hours on this lab .
 handl the negative argument seems simple. we only need to uvmdealloc the space.
 The va below  the stack , i use an original size about process to record.
 The Handler on the Handle the case in which a process passes a valid address from sbrk() to a system call
