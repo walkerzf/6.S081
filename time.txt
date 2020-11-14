@@ -3,4 +3,5 @@ time:
 11:00-13:00 part1 not done
 15:00-16:30 part1 done understand the stack and explantion
 16:30-17:30 part2 and part3 done
-4.5 hours
+4  hours
+four hours
