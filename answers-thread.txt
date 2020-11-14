@@ -1,0 +1,3 @@
+When we have two threads operating on the same bucket,they find a non-exist key in the bucket ,and creat an entry,
+and insert into the bucket(in the begin of the bucket).So an the end of the insert , we will have two branches in
+the bucket ,and a begin for a later writer!.
