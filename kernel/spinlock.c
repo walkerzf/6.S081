@@ -42,7 +42,7 @@ findslot(struct spinlock *lk) {
   panic("findslot");
 }
 #endif
-
+// in kalloc we need to init the lock
 void
 initlock(struct spinlock *lk, char *name)
 {
