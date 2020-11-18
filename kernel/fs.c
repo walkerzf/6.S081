@@ -427,10 +427,12 @@ bmap(struct inode *ip, uint bn)
       if ((addr = a[i]) == 0)
       {
         a[i] = addr = balloc(ip->dev);
+        //log write must be in the loop 
+        //because when we read we have not the fs syscall
         log_write(bp);
       }
     }
-    
+  
     brelse(bp);
     bn -= NINDIRECT * index;
     bp = bread(ip->dev, addr);
