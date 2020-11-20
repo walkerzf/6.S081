@@ -299,9 +299,9 @@ void ilock(struct inode *ip)
 
   if (ip == 0 || ip->ref < 1)
     panic("ilock");
-
+  
   acquiresleep(&ip->lock);
-
+  //printf("y\n");
   if (ip->valid == 0)
   {
     bp = bread(ip->dev, IBLOCK(ip->inum, sb));
@@ -322,8 +322,11 @@ void ilock(struct inode *ip)
 // Unlock the given inode.
 void iunlock(struct inode *ip)
 {
-  if (ip == 0 || !holdingsleep(&ip->lock) || ip->ref < 1)
+  if (ip == 0 || !holdingsleep(&ip->lock) || ip->ref < 1){
+    
     panic("iunlock");
+  }
+    
 
   releasesleep(&ip->lock);
 }
@@ -382,7 +385,7 @@ void iunlockput(struct inode *ip)
 
 // Return the disk block address of the nth block in inode ip.
 // If there is no such block, bmap allocates one.
-static uint
+ uint
 bmap(struct inode *ip, uint bn)
 {
   uint addr, *a;

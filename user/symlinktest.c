@@ -43,10 +43,13 @@ cleanup(void)
 // stat a symbolic link using O_NOFOLLOW
 static int
 stat_slink(char *pn, struct stat *st)
-{
+{ 
+  
   int fd = open(pn, O_RDONLY | O_NOFOLLOW);
+  //printf("%d",fd);
   if(fd < 0)
     return -1;
+  //printf("aa!");
   if(fstat(fd, st) != 0)
     return -1;
   return 0;
@@ -63,29 +66,32 @@ testsymlink(void)
   printf("Start: test symlinks\n");
 
   mkdir("/testsymlink");
-
+  //printf("0\n");
   fd1 = open("/testsymlink/a", O_CREATE | O_RDWR);
   if(fd1 < 0) fail("failed to open a");
-
+  //printf("1\n");
   r = symlink("/testsymlink/a", "/testsymlink/b");
   if(r < 0)
     fail("symlink b -> a failed");
-
+  //printf("2\n");
   if(write(fd1, buf, sizeof(buf)) != 4)
     fail("failed to write to a");
-
+  //printf("3\n");  
   if (stat_slink("/testsymlink/b", &st) != 0)
     fail("failed to stat b");
+  //printf("test?\n");  
   if(st.type != T_SYMLINK)
     fail("b isn't a symlink");
-
+  //
   fd2 = open("/testsymlink/b", O_RDWR);
   if(fd2 < 0)
     fail("failed to open b");
+  //printf("4\n");
   read(fd2, &c, 1);
+  //printf("4\n");
   if (c != 'a')
     fail("failed to read bytes from b");
-
+  
   unlink("/testsymlink/a");
   if(open("/testsymlink/b", O_RDWR) >= 0)
     fail("Should not be able to open b after deleting a");

@@ -1197,6 +1197,7 @@ createdelete(char *s)
       for(i = 0; i < N; i++){
         name[1] = '0' + i;
         fd = open(name, O_CREATE | O_RDWR);
+        //printf("!");
         if(fd < 0){
           printf("%s: create failed\n", s);
           exit(1);

@@ -20,7 +20,8 @@ initsleeplock(struct sleeplock *lk, char *name)
 
 void
 acquiresleep(struct sleeplock *lk)
-{
+{  
+ // printf("a!");
   acquire(&lk->lk);
   while (lk->locked) {
     sleep(lk, &lk->lk);
