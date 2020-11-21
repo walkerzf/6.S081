@@ -38,11 +38,15 @@ _v1(char *p)
 {
   int i;
   for (i = 0; i < PGSIZE*2; i++) {
+    
     if (i < PGSIZE + (PGSIZE/2)) {
+      //printf("%d\n",i);
       if (p[i] != 'A') {
+        
         printf("mismatch at %d, wanted 'A', got 0x%x\n", i, p[i]);
         err("v1 mismatch (1)");
       }
+      
     } else {
       if (p[i] != 0) {
         printf("mismatch at %d, wanted zero, got 0x%x\n", i, p[i]);
@@ -111,9 +115,12 @@ mmap_test(void)
   // offset in the file.
   //
   char *p = mmap(0, PGSIZE*2, PROT_READ, MAP_PRIVATE, fd, 0);
+  //printf("%p\n",p);
   if (p == MAP_FAILED)
     err("mmap (1)");
+  //printf("mmap sucees once!\n");
   _v1(p);
+  
   if (munmap(p, PGSIZE*2) == -1)
     err("munmap (1)");
 

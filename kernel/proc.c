@@ -119,7 +119,16 @@ found:
     release(&p->lock);
     return 0;
   }
+  p->originalsize = -1;
+  
+  for(int i = 0;i<16;i++){
+    p->vma[i].used = 0;
+    p->vma[i].addr = 0;
+    p->vma[i].end = 0;
+    p->vma[i].flags = 0;
+    p->vma[i].pf = 0;
 
+  }
   // An empty user page table.
   p->pagetable = proc_pagetable(p);
   if(p->pagetable == 0){
@@ -283,7 +292,18 @@ fork(void)
   np->sz = p->sz;
 
   np->parent = p;
-
+  for(int i = 0;i<16;i++){
+    np->vma[i].addr = p->vma[i].addr;
+    np->vma[i].end = p->vma[i].end;
+    np->vma[i].prot = p->vma[i].prot;
+    np->vma[i].flags = p->vma[i].flags;
+    np->vma[i].used = p->vma[i].used;
+    if((np->vma[i].pf = p->vma[i].pf)!=0){
+      filedup(np->vma[i].pf);
+    }
+    
+  }
+  
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
 

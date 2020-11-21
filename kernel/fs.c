@@ -467,10 +467,12 @@ readi(struct inode *ip, int user_dst, uint64 dst, uint off, uint n)
     bp = bread(ip->dev, bmap(ip, off/BSIZE));
     m = min(n - tot, BSIZE - off%BSIZE);
     if(either_copyout(user_dst, dst, bp->data + (off % BSIZE), m) == -1) {
+      printf("Failed!\n");
       brelse(bp);
       tot = -1;
       break;
     }
+    //printf("Success!\n");
     brelse(bp);
   }
   return tot;
