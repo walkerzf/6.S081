@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "limits": "c",
+        "cmath": "c",
+        "cstdio": "c",
+        "cstdlib": "c",
+        "type_traits": "c",
+        "*.tcc": "c",
+        "typeinfo": "c",
+        "cstdint": "c",
+        "climits": "c",
+        "cstdarg": "c"
+    },
+    "C_Cpp.errorSquiggles": "Enabled",
+    "git.ignoreLimitWarning": true
+}
